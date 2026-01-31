@@ -35,17 +35,38 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUIForAuth();
 });
 
-// Load data from localStorage
+// Load data from Server
 function loadData() {
-    const saved = localStorage.getItem('cidEvidence');
-    if (saved) {
-        evidenceData = JSON.parse(saved);
-        renderAll();
-    }
+    fetch('/api/evidence')
+        .then(response => response.json())
+        .then(data => {
+            evidenceData = data;
+            renderAll();
+            updateStats();
+        })
+        .catch(err => {
+            console.error('Error loading data:', err);
+            // Fallback to local storage if server fails (e.g. running locally without server)
+            const saved = localStorage.getItem('cidEvidence');
+            if (saved) {
+                evidenceData = JSON.parse(saved);
+                renderAll();
+            }
+        });
 }
 
-// Save data to localStorage
+// Save data to Server
 function saveData() {
+    fetch('/api/evidence', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(evidenceData)
+    })
+        .catch(err => console.error('Error saving data:', err));
+
+    // Also save to localStorage as backup
     localStorage.setItem('cidEvidence', JSON.stringify(evidenceData));
     updateStats();
 }

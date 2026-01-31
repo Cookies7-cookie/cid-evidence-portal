@@ -1,11 +1,14 @@
 {
-  "name": "cid-evidence-portal",
-  "version": "1.0.0",
-  "description": "CID Criminal Investigation Department Evidence Portal",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "author": "Cookies7-cookie",
-  "license": "MIT"
+    "name": "cid-evidence-portal",
+    "version": "1.0.0",
+    "description": "CID Criminal Investigation Department Evidence Portal",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "author": "Cookies7-cookie",
+    "license": "MIT",
+    "dependencies": {
+        "mongoose": "^8.0.0"
+    }
 }
