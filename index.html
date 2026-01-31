@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Criminal Investigation Department - Courtroom Evidence Management System">
+    <title>C.I.D - Courtroom Evidence Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon"><img src="icons/logo.png" alt="Logo" class="icon"></div>
+                <div class="logo-text">
+                    <span class="logo-title">C.I.D</span>
+                    <span class="logo-subtitle">Criminal Investigation Department</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#photos" class="nav-link active" data-section="photos">Photos</a>
+                <a href="#videos" class="nav-link" data-section="videos">Videos</a>
+                <a href="#criminals" class="nav-link" data-section="criminals">Criminals</a>
+            </nav>
+            <div class="auth-section">
+                <button class="login-btn" id="loginBtn" onclick="openLoginModal()">
+                    <img src="icons/logo.png" alt="" style="width: 16px; height: 16px; margin-right: 6px;"> Login
+                </button>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <span class="user-name" id="userName"></span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">C.I.D EVIDENCE PORTAL</div>
+            <h1 class="hero-title">C.I.D Evidence<br><span class="highlight">Management System</span></h1>
+            <!-- <p class="hero-description">Secure, organized, and accessible evidence documentation for court proceedings.
+            </p> -->
+            <div class="hero-stats">
+                <div class="stat-item"><span class="stat-number" id="photoCount">0</span><span
+                        class="stat-label">Photos</span></div>
+                <div class="stat-divider"></div>
+                <div class="stat-item"><span class="stat-number" id="videoCount">0</span><span
+                        class="stat-label">Videos</span></div>
+                <div class="stat-divider"></div>
+                <div class="stat-item"><span class="stat-number" id="criminalCount">0</span><span
+                        class="stat-label">Criminals</span></div>
+            </div>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <section id="photos" class="evidence-section active">
+            <div class="section-header">
+                <div class="section-icon photos-icon"><img src="icons/photo.png" alt="" class="icon"></div>
+                <div class="section-title-group">
+                    <h2 class="section-title">Photographic Evidence</h2>
+                    <p class="section-description">Visual documentation from crime scenes</p>
+                </div>
+                <button class="add-btn" onclick="openModal('photo')">+ Add Photo</button>
+            </div>
+            <div class="evidence-grid" id="photosGrid">
+                <div class="empty-state">
+                    <div class="empty-icon"><img src="icons/photo.png" alt="" class="icon-large"></div>
+                    <h3>No Photos Added Yet</h3>
+                    <p>Click "Add Photo" to upload photographic evidence</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="videos" class="evidence-section">
+            <div class="section-header">
+                <div class="section-icon videos-icon"><img src="icons/video.png" alt="" class="icon"></div>
+                <div class="section-title-group">
+                    <h2 class="section-title">Video Evidence</h2>
+                    <p class="section-description">Surveillance footage and recordings</p>
+                </div>
+                <button class="add-btn" onclick="openModal('video')">+ Add Video</button>
+            </div>
+            <div class="evidence-grid" id="videosGrid">
+                <div class="empty-state">
+                    <div class="empty-icon"><img src="icons/video.png" alt="" class="icon-large"></div>
+                    <h3>No Videos Added Yet</h3>
+                    <p>Click "Add Video" to upload video evidence</p>
+                </div>
+            </div>
+        </section>
+
+
+
+        <section id="criminals" class="evidence-section">
+            <div class="section-header">
+                <div class="section-icon criminals-icon"><img src="icons/criminal.png" alt="" class="icon"></div>
+                <div class="section-title-group">
+                    <h2 class="section-title">Criminals Involved</h2>
+                    <p class="section-description">Profiles of suspects and convicted individuals</p>
+                </div>
+                <button class="add-btn" onclick="openModal('criminal')">+ Add Criminal</button>
+            </div>
+            <div class="criminals-grid" id="criminalsGrid">
+                <div class="empty-state">
+                    <div class="empty-icon"><img src="icons/criminal.png" alt="" class="icon-large"></div>
+                    <h3>No Criminals Added Yet</h3>
+                    <p>Click "Add Criminal" to add criminal profiles</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="evidenceModal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Evidence</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <form id="evidenceForm" onsubmit="handleSubmit(event)">
+                <div class="form-group">
+                    <label for="evidenceTitle">Title / Name</label>
+                    <input type="text" id="evidenceTitle" name="title" required placeholder="Enter title or name">
+                </div>
+                <div class="form-group" id="urlGroup">
+                    <label for="evidenceUrl">URL / Link</label>
+                    <input type="url" id="evidenceUrl" name="url" placeholder="Enter image or video URL">
+                </div>
+                <div class="form-group" id="thumbnailGroup" style="display: none;">
+                    <label for="evidenceThumbnail">Thumbnail URL (Optional)</label>
+                    <input type="url" id="evidenceThumbnail" name="thumbnail" placeholder="Enter thumbnail image URL">
+                </div>
+                <div class="form-group" id="descriptionGroup">
+                    <label for="evidenceDescription">Description</label>
+                    <textarea id="evidenceDescription" name="description" rows="4"
+                        placeholder="Enter detailed description"></textarea>
+                </div>
+                <div class="criminal-fields" id="criminalFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="criminalAge">Age</label>
+                        <input type="number" id="criminalAge" name="age" placeholder="Enter age">
+                    </div>
+                    <div class="form-group">
+                        <label for="criminalCharges">Charges</label>
+                        <input type="text" id="criminalCharges" name="charges" placeholder="Enter charges">
+                    </div>
+                    <div class="form-group">
+                        <label for="criminalStatus">Status</label>
+                        <select id="criminalStatus" name="status">
+                            <option value="Suspect">Suspect</option>
+                            <option value="Arrested">Arrested</option>
+                            <option value="Convicted">Convicted</option>
+                            <option value="Wanted">Wanted</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="criminalPhoto">Photo URL</label>
+                        <input type="url" id="criminalPhoto" name="photo" placeholder="Enter photo URL">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="evidenceDate">Date</label>
+                    <input type="date" id="evidenceDate" name="date" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Evidence</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="view-modal-overlay" id="viewModalOverlay">
+        <div class="view-modal" id="viewModal">
+            <button class="view-modal-close" onclick="closeViewModal()">✕</button>
+            <div class="view-modal-content" id="viewModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModalOverlay">
+        <div class="modal login-modal">
+            <div class="modal-header">
+                <h3>🔐 Login to C.I.D Portal</h3>
+                <button class="modal-close" onclick="closeLoginModal()">✕</button>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" name="username" required placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" required
+                        placeholder="Enter your password">
+                </div>
+                <p class="login-error" id="loginError"
+                    style="display: none; color: #ef4444; font-size: 0.85rem; margin-bottom: 16px;"></p>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeLoginModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>© C.I.D - Criminal Investigation Department | Evidence Portal</p>
+            <p class="footer-disclaimer">Authorized Personnel Only</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
