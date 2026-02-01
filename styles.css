@@ -470,9 +470,7 @@ body {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
 }
 
-.criminals-icon {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-}
+
 
 .section-title-group {
     flex: 1;
@@ -507,6 +505,50 @@ body {
 .add-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   EVIDENCE TABS (FBI SECTION)
+   ============================================ */
+.evidence-tabs {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 30px;
+    padding-bottom: 1px;
+    /* Visual fix */
+}
+
+.tab-btn {
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.tab-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Tab container animation */
+.evidence-container {
+    animation: fadeIn 0.3s ease-out;
 }
 
 /* ============================================
@@ -698,92 +740,7 @@ body {
     white-space: pre-wrap;
 }
 
-/* ============================================
-   CRIMINAL CARDS
-   ============================================ */
 
-.criminal-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-    transition: var(--transition);
-}
-
-.criminal-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--border-light);
-    box-shadow: var(--shadow-xl);
-}
-
-.criminal-photo {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    background: var(--bg-surface);
-}
-
-.criminal-info {
-    padding: 20px;
-}
-
-.criminal-name {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.criminal-charges {
-    color: var(--primary);
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-bottom: 12px;
-}
-
-.criminal-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.criminal-detail {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.status-suspect {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--warning);
-}
-
-.status-arrested {
-    background: rgba(59, 130, 246, 0.2);
-    color: var(--info);
-}
-
-.status-convicted {
-    background: rgba(239, 68, 68, 0.2);
-    color: var(--danger);
-}
-
-.status-wanted {
-    background: rgba(168, 85, 247, 0.2);
-    color: #a855f7;
-}
 
 /* ============================================
    EMPTY STATE

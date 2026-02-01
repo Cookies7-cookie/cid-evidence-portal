@@ -22,9 +22,7 @@
                 </div>
             </div>
             <nav class="nav">
-                <a href="#photos" class="nav-link active" data-section="photos">Photos</a>
-                <a href="#videos" class="nav-link" data-section="videos">Videos</a>
-                <a href="#criminals" class="nav-link" data-section="criminals">Criminals</a>
+                <a href="#fbi-evidences" class="nav-link active" data-section="fbi-evidences">FBI Evidences</a>
             </nav>
             <div class="auth-section">
                 <button class="login-btn" id="loginBtn" onclick="openLoginModal()">
@@ -50,66 +48,36 @@
                 <div class="stat-divider"></div>
                 <div class="stat-item"><span class="stat-number" id="videoCount">0</span><span
                         class="stat-label">Videos</span></div>
-                <div class="stat-divider"></div>
-                <div class="stat-item"><span class="stat-number" id="criminalCount">0</span><span
-                        class="stat-label">Criminals</span></div>
             </div>
         </div>
     </section>
 
     <main class="main-content">
-        <section id="photos" class="evidence-section active">
+        <section id="fbi-evidences" class="evidence-section active">
             <div class="section-header">
-                <div class="section-icon photos-icon"><img src="icons/photo.png" alt="" class="icon"></div>
+                <div class="section-icon photos-icon" id="mainSectionIcon"><img src="icons/photo.png" alt=""
+                        class="icon"></div>
                 <div class="section-title-group">
-                    <h2 class="section-title">Photographic Evidence</h2>
-                    <p class="section-description">Visual documentation from crime scenes</p>
+                    <h2 class="section-title">FBI Evidences</h2>
+                    <p class="section-description">Secure documentation of all photographic and video evidences</p>
                 </div>
-                <button class="add-btn" onclick="openModal('photo')">+ Add Photo</button>
+                <button class="add-btn" id="addEvidenceBtn" onclick="openModal('photo')">+ Add Evidence</button>
             </div>
-            <div class="evidence-grid" id="photosGrid">
-                <div class="empty-state">
-                    <div class="empty-icon"><img src="icons/photo.png" alt="" class="icon-large"></div>
-                    <h3>No Photos Added Yet</h3>
-                    <p>Click "Add Photo" to upload photographic evidence</p>
-                </div>
-            </div>
-        </section>
 
-        <section id="videos" class="evidence-section">
-            <div class="section-header">
-                <div class="section-icon videos-icon"><img src="icons/video.png" alt="" class="icon"></div>
-                <div class="section-title-group">
-                    <h2 class="section-title">Video Evidence</h2>
-                    <p class="section-description">Surveillance footage and recordings</p>
-                </div>
-                <button class="add-btn" onclick="openModal('video')">+ Add Video</button>
+            <div class="evidence-tabs">
+                <button class="tab-btn active" onclick="switchTab('photos')">Photos Evidences</button>
+                <button class="tab-btn" onclick="switchTab('videos')">Videos Evidences</button>
             </div>
-            <div class="evidence-grid" id="videosGrid">
-                <div class="empty-state">
-                    <div class="empty-icon"><img src="icons/video.png" alt="" class="icon-large"></div>
-                    <h3>No Videos Added Yet</h3>
-                    <p>Click "Add Video" to upload video evidence</p>
+
+            <div id="photosContainer" class="evidence-container">
+                <div class="evidence-grid" id="photosGrid">
+                    <!-- Photos will be rendered here -->
                 </div>
             </div>
-        </section>
 
-
-
-        <section id="criminals" class="evidence-section">
-            <div class="section-header">
-                <div class="section-icon criminals-icon"><img src="icons/criminal.png" alt="" class="icon"></div>
-                <div class="section-title-group">
-                    <h2 class="section-title">Criminals Involved</h2>
-                    <p class="section-description">Profiles of suspects and convicted individuals</p>
-                </div>
-                <button class="add-btn" onclick="openModal('criminal')">+ Add Criminal</button>
-            </div>
-            <div class="criminals-grid" id="criminalsGrid">
-                <div class="empty-state">
-                    <div class="empty-icon"><img src="icons/criminal.png" alt="" class="icon-large"></div>
-                    <h3>No Criminals Added Yet</h3>
-                    <p>Click "Add Criminal" to add criminal profiles</p>
+            <div id="videosContainer" class="evidence-container" style="display: none;">
+                <div class="evidence-grid" id="videosGrid">
+                    <!-- Videos will be rendered here -->
                 </div>
             </div>
         </section>
@@ -139,29 +107,7 @@
                     <textarea id="evidenceDescription" name="description" rows="4"
                         placeholder="Enter detailed description"></textarea>
                 </div>
-                <div class="criminal-fields" id="criminalFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="criminalAge">Age</label>
-                        <input type="number" id="criminalAge" name="age" placeholder="Enter age">
-                    </div>
-                    <div class="form-group">
-                        <label for="criminalCharges">Charges</label>
-                        <input type="text" id="criminalCharges" name="charges" placeholder="Enter charges">
-                    </div>
-                    <div class="form-group">
-                        <label for="criminalStatus">Status</label>
-                        <select id="criminalStatus" name="status">
-                            <option value="Suspect">Suspect</option>
-                            <option value="Arrested">Arrested</option>
-                            <option value="Convicted">Convicted</option>
-                            <option value="Wanted">Wanted</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="criminalPhoto">Photo URL</label>
-                        <input type="url" id="criminalPhoto" name="photo" placeholder="Enter photo URL">
-                    </div>
-                </div>
+
                 <div class="form-group">
                     <label for="evidenceDate">Date</label>
                     <input type="date" id="evidenceDate" name="date" required>

@@ -19,8 +19,7 @@ let currentUser = null;
 let evidenceData = {
     photos: [],
     videos: [],
-    text: [],
-    criminals: []
+    text: []
 };
 
 let currentType = 'photo';
@@ -102,7 +101,6 @@ function setupNavigation() {
 function updateStats() {
     document.getElementById('photoCount').textContent = evidenceData.photos.length;
     document.getElementById('videoCount').textContent = evidenceData.videos.length;
-    document.getElementById('criminalCount').textContent = evidenceData.criminals.length;
 
     // Animate numbers
     animateNumbers();
@@ -167,12 +165,6 @@ function openModal(type) {
             urlGroup.style.display = 'none';
             thumbnailGroup.style.display = 'none';
             break;
-        case 'criminal':
-            modalTitle.textContent = 'Add Criminal Profile';
-            criminalFields.style.display = 'block';
-            urlGroup.style.display = 'none';
-            thumbnailGroup.style.display = 'none';
-            break;
     }
 
     modal.classList.add('active');
@@ -229,13 +221,6 @@ function handleSubmit(e) {
         case 'text':
             evidenceData.text.push({ id, title, content: description, date });
             break;
-        case 'criminal':
-            const age = form.age.value;
-            const charges = form.charges.value;
-            const status = form.status.value;
-            const photo = form.photo.value;
-            evidenceData.criminals.push({ id, name: title, age, charges, status, photo, description, date });
-            break;
     }
 
     saveData();
@@ -283,7 +268,6 @@ function generateVideoThumbnail(videoUrl, callback) {
 function renderAll() {
     renderPhotos();
     renderVideos();
-    renderCriminals();
 }
 
 // Render photos
@@ -386,42 +370,7 @@ function renderText() {
     `).join('');
 }
 
-// Render criminals
-function renderCriminals() {
-    const grid = document.getElementById('criminalsGrid');
 
-    if (evidenceData.criminals.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon"><img src="icons/criminal.png" alt="" class="icon-large"></div>
-                <h3>No Criminals Added Yet</h3>
-                <p>Click "Add Criminal" to add criminal profiles</p>
-            </div>
-        `;
-        return;
-    }
-
-    grid.innerHTML = evidenceData.criminals.map(criminal => `
-        <div class="criminal-card" onclick="viewEvidence('criminal', ${criminal.id})">
-            <img class="criminal-photo" src="${criminal.photo || 'https://via.placeholder.com/400x220/1a1a24/3f3f46?text=No+Photo'}" alt="${criminal.name}" onerror="this.src='https://via.placeholder.com/400x220/1a1a24/3f3f46?text=No+Photo'">
-            <div class="criminal-info">
-                <h3 class="criminal-name">${criminal.name}</h3>
-                <p class="criminal-charges">${criminal.charges || 'Charges pending'}</p>
-                <div class="criminal-details">
-                    <span class="criminal-detail"><img src="icons/criminal.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Age: ${criminal.age || 'Unknown'}</span>
-                    <span class="criminal-detail"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> ${formatDate(criminal.date)}</span>
-                </div>
-                <span class="status-badge status-${criminal.status.toLowerCase()}">${criminal.status}</span>
-                <div class="evidence-card-meta" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 12px;">
-                    <span></span>
-                    <div class="evidence-card-actions">
-                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvidence('criminals', ${criminal.id})" title="Delete"><img src="icons/delete.png" alt="Delete" style="width: 14px; height: 14px;"></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
 
 // View evidence in modal
 function viewEvidence(type, id) {
@@ -465,22 +414,7 @@ function viewEvidence(type, id) {
                 </div>
             `;
             break;
-        case 'criminal':
-            item = evidenceData.criminals.find(c => c.id === id);
-            content.innerHTML = `
-                <img src="${item.photo || 'https://via.placeholder.com/800x400/1a1a24/3f3f46?text=No+Photo'}" alt="${item.name}" style="max-height: 400px;" onerror="this.src='https://via.placeholder.com/800x400/1a1a24/3f3f46?text=No+Photo'">
-                <div class="view-modal-info">
-                    <h2>${item.name}</h2>
-                    <p style="color: var(--primary); font-weight: 600; margin-bottom: 12px;">${item.charges || 'Charges pending'}</p>
-                    <div style="display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap;">
-                        <span style="color: var(--text-secondary);"><img src="icons/criminal.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Age: ${item.age || 'Unknown'}</span>
-                        <span class="status-badge status-${item.status.toLowerCase()}">${item.status}</span>
-                    </div>
-                    <p style="margin-bottom: 16px; color: var(--text-secondary);">${item.description || 'No additional information'}</p>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Added: ${formatDate(item.date)}</p>
-                </div>
-            `;
-            break;
+
     }
 
     modal.classList.add('active');
@@ -601,6 +535,46 @@ function handleLogin(e) {
     } else {
         errorEl.textContent = 'User not found. Please check your username.';
         errorEl.style.display = 'block';
+    }
+}
+
+// Switch tab function
+function switchTab(type) {
+    // Update tab buttons
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase().includes(type)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Show/Hide containers
+    if (type === 'photos') {
+        document.getElementById('photosContainer').style.display = 'block';
+        document.getElementById('videosContainer').style.display = 'none';
+
+        const mainIcon = document.getElementById('mainSectionIcon');
+        mainIcon.className = 'section-icon photos-icon';
+        const img = mainIcon.querySelector('img');
+        if (img) img.src = 'icons/photo.png';
+
+        // Update Add Button to open photo modal
+        const addBtn = document.getElementById('addEvidenceBtn');
+        if (addBtn) addBtn.onclick = () => openModal('photo');
+    } else {
+        document.getElementById('photosContainer').style.display = 'none';
+        document.getElementById('videosContainer').style.display = 'block';
+
+        const mainIcon = document.getElementById('mainSectionIcon');
+        mainIcon.className = 'section-icon videos-icon';
+        const img = mainIcon.querySelector('img');
+        if (img) img.src = 'icons/video.png';
+
+        // Update Add Button to open video modal
+        const addBtn = document.getElementById('addEvidenceBtn');
+        if (addBtn) addBtn.onclick = () => openModal('video');
     }
 }
 
