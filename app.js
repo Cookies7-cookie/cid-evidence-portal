@@ -19,6 +19,8 @@ let currentUser = null;
 let evidenceData = {
     photos: [],
     videos: [],
+    fbi_photos: [],
+    fbi_videos: [],
     text: []
 };
 
@@ -101,6 +103,7 @@ function setupNavigation() {
 function updateStats() {
     document.getElementById('photoCount').textContent = evidenceData.photos.length;
     document.getElementById('videoCount').textContent = evidenceData.videos.length;
+    document.getElementById('fbiCount').textContent = evidenceData.fbi_photos.length + evidenceData.fbi_videos.length;
 
     // Animate numbers
     animateNumbers();
@@ -217,75 +220,101 @@ function handleSubmit(e) {
                 renderAll();
                 closeModal();
             }
-            return; // Don't call save/render/close here, done in callbacks
         case 'text':
             evidenceData.text.push({ id, title, content: description, date });
             break;
+        case 'fbi_photo':
+            evidenceData.fbi_photos.push({ id, title, description, url, date });
+            saveData();
+            renderAll();
+            closeModal();
+            break;
+        case 'fbi_video':
+            const fbiThumbnail = form.thumbnail?.value || '';
+            if (fbiThumbnail) {
+                evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: fbiThumbnail, date });
+                saveData();
+                renderAll();
+                closeModal();
+            } else if (url) {
+                generateVideoThumbnail(url, (autoThumbnail) => {
+                    evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: autoThumbnail, date });
+                    saveData();
+                    renderAll();
+                    closeModal();
+                });
+            } else {
+                evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: '', date });
+                saveData();
+                renderAll();
+                closeModal();
+            }
+            return;
+
+            saveData();
+            renderAll();
+            closeModal();
     }
 
-    saveData();
-    renderAll();
-    closeModal();
-}
+    // Generate thumbnail from video's first frame
+    function generateVideoThumbnail(videoUrl, callback) {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.src = videoUrl;
+        video.muted = true;
 
-// Generate thumbnail from video's first frame
-function generateVideoThumbnail(videoUrl, callback) {
-    const video = document.createElement('video');
-    video.crossOrigin = 'anonymous';
-    video.src = videoUrl;
-    video.muted = true;
+        video.addEventListener('loadeddata', () => {
+            // Seek to 1 second or start of video
+            video.currentTime = Math.min(1, video.duration);
+        });
 
-    video.addEventListener('loadeddata', () => {
-        // Seek to 1 second or start of video
-        video.currentTime = Math.min(1, video.duration);
-    });
+        video.addEventListener('seeked', () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.7);
+                callback(thumbnailUrl);
+            } catch (e) {
+                // If CORS fails, just use empty thumbnail
+                console.log('Could not generate thumbnail:', e);
+                callback('');
+            }
+        });
 
-    video.addEventListener('seeked', () => {
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.7);
-            callback(thumbnailUrl);
-        } catch (e) {
-            // If CORS fails, just use empty thumbnail
-            console.log('Could not generate thumbnail:', e);
+        video.addEventListener('error', () => {
+            console.log('Video load error, using empty thumbnail');
             callback('');
-        }
-    });
+        });
 
-    video.addEventListener('error', () => {
-        console.log('Video load error, using empty thumbnail');
-        callback('');
-    });
+        video.load();
+    }
 
-    video.load();
-}
+    // Render all sections
+    function renderAll() {
+        renderPhotos();
+        renderVideos();
+        renderFBIEvidence();
+    }
 
-// Render all sections
-function renderAll() {
-    renderPhotos();
-    renderVideos();
-}
+    // Render photos
+    function renderPhotos() {
+        const grid = document.getElementById('photosGrid');
 
-// Render photos
-function renderPhotos() {
-    const grid = document.getElementById('photosGrid');
-
-    if (evidenceData.photos.length === 0) {
-        grid.innerHTML = `
+        if (evidenceData.photos.length === 0) {
+            grid.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon"><img src="icons/photo.png" alt="" class="icon-large"></div>
                 <h3>No Photos Added Yet</h3>
                 <p>Click "Add Photo" to upload photographic evidence</p>
             </div>
         `;
-        return;
-    }
+            return;
+        }
 
-    grid.innerHTML = evidenceData.photos.map(photo => `
+        grid.innerHTML = evidenceData.photos.map(photo => `
         <div class="evidence-card" onclick="viewEvidence('photo', ${photo.id})">
             <img class="evidence-card-image" src="${photo.url || 'https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'}" alt="${photo.title}" onerror="this.src='https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'">
             <div class="evidence-card-content">
@@ -300,24 +329,24 @@ function renderPhotos() {
             </div>
         </div>
     `).join('');
-}
+    }
 
-// Render videos
-function renderVideos() {
-    const grid = document.getElementById('videosGrid');
+    // Render videos
+    function renderVideos() {
+        const grid = document.getElementById('videosGrid');
 
-    if (evidenceData.videos.length === 0) {
-        grid.innerHTML = `
+        if (evidenceData.videos.length === 0) {
+            grid.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon"><img src="icons/video.png" alt="" class="icon-large"></div>
                 <h3>No Videos Added Yet</h3>
                 <p>Click "Add Video" to upload video evidence</p>
             </div>
         `;
-        return;
-    }
+            return;
+        }
 
-    grid.innerHTML = evidenceData.videos.map(video => `
+        grid.innerHTML = evidenceData.videos.map(video => `
         <div class="evidence-card" onclick="viewEvidence('video', ${video.id})">
             <div class="video-thumbnail">
                 <video class="evidence-card-image" src="${video.url}" muted preload="metadata" onloadeddata="this.currentTime=1"></video>
@@ -335,25 +364,25 @@ function renderVideos() {
             </div>
         </div>
     `).join('');
-}
+    }
 
-// Render text evidence
-function renderText() {
-    const list = document.getElementById('textList');
-    if (!list) return; // Text section was removed
+    // Render text evidence
+    function renderText() {
+        const list = document.getElementById('textList');
+        if (!list) return; // Text section was removed
 
-    if (evidenceData.text.length === 0) {
-        list.innerHTML = `
+        if (evidenceData.text.length === 0) {
+            list.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon"><img src="icons/document.png" alt="" class="icon-large"></div>
                 <h3>No Documents Added Yet</h3>
                 <p>Click "Add Document" to upload text evidence</p>
             </div>
         `;
-        return;
-    }
+            return;
+        }
 
-    list.innerHTML = evidenceData.text.map(text => `
+        list.innerHTML = evidenceData.text.map(text => `
         <div class="text-card" onclick="viewEvidence('text', ${text.id})">
             <div class="text-card-header">
                 <h3 class="text-card-title">📄 ${text.title}</h3>
@@ -368,20 +397,20 @@ function renderText() {
             </div>
         </div>
     `).join('');
-}
+    }
 
 
 
-// View evidence in modal
-function viewEvidence(type, id) {
-    const modal = document.getElementById('viewModalOverlay');
-    const content = document.getElementById('viewModalContent');
+    // View evidence in modal
+    function viewEvidence(type, id) {
+        const modal = document.getElementById('viewModalOverlay');
+        const content = document.getElementById('viewModalContent');
 
-    let item;
-    switch (type) {
-        case 'photo':
-            item = evidenceData.photos.find(p => p.id === id);
-            content.innerHTML = `
+        let item;
+        switch (type) {
+            case 'photo':
+                item = evidenceData.photos.find(p => p.id === id);
+                content.innerHTML = `
                 <img src="${item.url || 'https://via.placeholder.com/800x500/1a1a24/3f3f46?text=No+Image'}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/800x500/1a1a24/3f3f46?text=No+Image'">
                 <div class="view-modal-info">
                     <h2>${item.title}</h2>
@@ -389,10 +418,10 @@ function viewEvidence(type, id) {
                     <p style="color: var(--text-muted); font-size: 0.9rem;"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Date: ${formatDate(item.date)}</p>
                 </div>
             `;
-            break;
-        case 'video':
-            item = evidenceData.videos.find(v => v.id === id);
-            content.innerHTML = `
+                break;
+            case 'video':
+                item = evidenceData.videos.find(v => v.id === id);
+                content.innerHTML = `
                 <video controls style="width: 100%; background: black;">
                     <source src="${item.url}" type="video/mp4">
                     Your browser does not support the video tag.
@@ -403,245 +432,351 @@ function viewEvidence(type, id) {
                     <p style="color: var(--text-muted); font-size: 0.9rem;"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Date: ${formatDate(item.date)}</p>
                 </div>
             `;
-            break;
-        case 'text':
-            item = evidenceData.text.find(t => t.id === id);
-            content.innerHTML = `
+                break;
+            case 'text':
+                item = evidenceData.text.find(t => t.id === id);
+                content.innerHTML = `
                 <div class="view-modal-info">
                     <h2>${item.title}</h2>
                     <p style="margin-bottom: 16px; white-space: pre-wrap; line-height: 1.8;">${item.content}</p>
                     <p style="color: var(--text-muted); font-size: 0.9rem;"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> Date: ${formatDate(item.date)}</p>
                 </div>
             `;
-            break;
+                break;
 
+        }
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeViewModal() {
-    document.getElementById('viewModalOverlay').classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-// Delete evidence
-function deleteEvidence(type, id) {
-    if (confirm('Are you sure you want to delete this evidence? This action cannot be undone.')) {
-        evidenceData[type] = evidenceData[type].filter(item => item.id !== id);
-        saveData();
-        renderAll();
+    function closeViewModal() {
+        document.getElementById('viewModalOverlay').classList.remove('active');
+        document.body.style.overflow = '';
     }
-}
 
-// Utility functions
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return 'No content';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-// Close modals on escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
-        closeViewModal();
-        closeLoginModal();
+    // Delete evidence
+    function deleteEvidence(type, id) {
+        if (confirm('Are you sure you want to delete this evidence? This action cannot be undone.')) {
+            evidenceData[type] = evidenceData[type].filter(item => item.id !== id);
+            saveData();
+            renderAll();
+        }
     }
-});
 
-// Close modals on overlay click
-document.getElementById('modalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'modalOverlay') closeModal();
-});
-
-document.getElementById('viewModalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'viewModalOverlay') closeViewModal();
-});
-
-document.getElementById('loginModalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'loginModalOverlay') closeLoginModal();
-});
-
-// ============================================
-// AUTHENTICATION SYSTEM
-// ============================================
-
-// Load session from localStorage
-function loadSession() {
-    const savedUser = localStorage.getItem('cidCurrentUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
+    // Utility functions
+    function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
     }
-}
 
-// Save session to localStorage
-function saveSession() {
-    if (currentUser) {
-        localStorage.setItem('cidCurrentUser', JSON.stringify(currentUser));
-    } else {
-        localStorage.removeItem('cidCurrentUser');
+    function truncateText(text, maxLength) {
+        if (!text) return 'No content';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     }
-}
 
-// Open login modal
-function openLoginModal() {
-    const modal = document.getElementById('loginModalOverlay');
-    document.getElementById('loginForm').reset();
-    document.getElementById('loginError').style.display = 'none';
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-// Close login modal
-function closeLoginModal() {
-    const modal = document.getElementById('loginModalOverlay');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-// Handle login form submission
-function handleLogin(e) {
-    e.preventDefault();
-
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const errorEl = document.getElementById('loginError');
-
-    // Check if user exists
-    if (userAccounts[username]) {
-        // Check password
-        if (userAccounts[username].password === password) {
-            // Login successful
-            currentUser = {
-                username: username,
-                displayName: userAccounts[username].displayName,
-                canEdit: userAccounts[username].canEdit
-            };
-            saveSession();
+    // Close modals on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeViewModal();
             closeLoginModal();
-            updateUIForAuth();
-            renderAll(); // Re-render to show/hide edit buttons
+        }
+    });
+
+    // Close modals on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modalOverlay') closeModal();
+    });
+
+    document.getElementById('viewModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'viewModalOverlay') closeViewModal();
+    });
+
+    document.getElementById('loginModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'loginModalOverlay') closeLoginModal();
+    });
+
+    // ============================================
+    // AUTHENTICATION SYSTEM
+    // ============================================
+
+    // Load session from localStorage
+    function loadSession() {
+        const savedUser = localStorage.getItem('cidCurrentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+        }
+    }
+
+    // Save session to localStorage
+    function saveSession() {
+        if (currentUser) {
+            localStorage.setItem('cidCurrentUser', JSON.stringify(currentUser));
         } else {
-            errorEl.textContent = 'Incorrect password. Please try again.';
+            localStorage.removeItem('cidCurrentUser');
+        }
+    }
+
+    // Open login modal
+    function openLoginModal() {
+        const modal = document.getElementById('loginModalOverlay');
+        document.getElementById('loginForm').reset();
+        document.getElementById('loginError').style.display = 'none';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close login modal
+    function closeLoginModal() {
+        const modal = document.getElementById('loginModalOverlay');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Handle login form submission
+    function handleLogin(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const errorEl = document.getElementById('loginError');
+
+        // Check if user exists
+        if (userAccounts[username]) {
+            // Check password
+            if (userAccounts[username].password === password) {
+                // Login successful
+                currentUser = {
+                    username: username,
+                    displayName: userAccounts[username].displayName,
+                    canEdit: userAccounts[username].canEdit
+                };
+                saveSession();
+                closeLoginModal();
+                updateUIForAuth();
+                renderAll(); // Re-render to show/hide edit buttons
+            } else {
+                errorEl.textContent = 'Incorrect password. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        } else {
+            errorEl.textContent = 'User not found. Please check your username.';
             errorEl.style.display = 'block';
         }
-    } else {
-        errorEl.textContent = 'User not found. Please check your username.';
-        errorEl.style.display = 'block';
     }
-}
 
-// Switch tab function
-function switchTab(type) {
-    // Update tab buttons
-    const buttons = document.querySelectorAll('.tab-btn');
-    buttons.forEach(btn => {
-        if (btn.textContent.toLowerCase().includes(type)) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
+    function switchTab(type) {
+        // If it's one of the FBI subtypes, delegate to FBI switcher
+        if (type === 'fbi_photos' || type === 'fbi_videos') {
+            switchFbiTab(type);
+            return;
         }
-    });
 
-    // Show/Hide containers
-    if (type === 'photos') {
-        document.getElementById('photosContainer').style.display = 'block';
-        document.getElementById('videosContainer').style.display = 'none';
+        // Standard main nav logic is handled by setupNavigation and data-section attributes
+        // But if we have internal tabs for the main sections (which we don't currently, they are separate sections)
+        // We might need logic here. 
 
-        const mainIcon = document.getElementById('mainSectionIcon');
-        mainIcon.className = 'section-icon photos-icon';
-        const img = mainIcon.querySelector('img');
-        if (img) img.src = 'icons/photo.png';
-
-        // Update Add Button to open photo modal
-        const addBtn = document.getElementById('addEvidenceBtn');
-        if (addBtn) addBtn.onclick = () => openModal('photo');
-    } else {
-        document.getElementById('photosContainer').style.display = 'none';
-        document.getElementById('videosContainer').style.display = 'block';
-
-        const mainIcon = document.getElementById('mainSectionIcon');
-        mainIcon.className = 'section-icon videos-icon';
-        const img = mainIcon.querySelector('img');
-        if (img) img.src = 'icons/video.png';
-
-        // Update Add Button to open video modal
-        const addBtn = document.getElementById('addEvidenceBtn');
-        if (addBtn) addBtn.onclick = () => openModal('video');
-    }
-}
-
-// Logout function
-function logout() {
-    currentUser = null;
-    saveSession();
-    updateUIForAuth();
-    renderAll(); // Re-render to hide edit buttons
-}
-
-// Update UI based on authentication state
-function updateUIForAuth() {
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const userName = document.getElementById('userName');
-
-    if (currentUser) {
-        loginBtn.style.display = 'none';
-        userInfo.style.display = 'flex';
-        userName.textContent = currentUser.displayName;
-    } else {
-        loginBtn.style.display = 'flex';
-        userInfo.style.display = 'none';
-    }
-
-    // Update add buttons visibility
-    updateEditButtonsVisibility();
-}
-
-// Update edit buttons visibility based on permissions
-function updateEditButtonsVisibility() {
-    const canEdit = currentUser && currentUser.canEdit;
-    const addButtons = document.querySelectorAll('.add-btn');
-
-    addButtons.forEach(btn => {
-        if (canEdit) {
-            btn.style.display = 'flex';
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-        } else {
-            btn.style.display = 'none';
+        // However, the FBI section internal tabs might call switchTab('photos') due to copy-paste or old code.
+        // Let's handle that case if we are in the FBI section
+        const fbiSection = document.getElementById('fbi-evidences');
+        if (fbiSection && fbiSection.classList.contains('active')) {
+            if (type === 'photos') switchFbiTab('fbi_photos');
+            if (type === 'videos') switchFbiTab('fbi_videos');
         }
-    });
-}
-
-// Check if user can edit (used before any edit action)
-function canUserEdit() {
-    return currentUser && currentUser.canEdit;
-}
-
-// Wrapper for openModal that checks permissions
-const originalOpenModal = openModal;
-openModal = function (type) {
-    if (!canUserEdit()) {
-        alert('You must be logged in with edit permissions to add evidence.');
-        return;
     }
-    originalOpenModal(type);
-};
 
-// Wrapper for deleteEvidence that checks permissions
-const originalDeleteEvidence = deleteEvidence;
-deleteEvidence = function (type, id) {
-    if (!canUserEdit()) {
-        alert('You must be logged in with edit permissions to delete evidence.');
-        return;
+    function switchFbiTab(type) {
+        // Normalize type
+        let targetType = type;
+        if (type === 'photos') targetType = 'fbi_photos';
+        if (type === 'videos') targetType = 'fbi_videos';
+
+        const isPhotos = targetType === 'fbi_photos';
+
+        // Update tab buttons
+        const buttons = document.querySelectorAll('.evidence-tabs .tab-btn');
+        buttons.forEach(btn => {
+            const btnText = btn.textContent.toLowerCase();
+            if (isPhotos && btnText.includes('photos')) {
+                btn.classList.add('active');
+            } else if (!isPhotos && btnText.includes('videos')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const photoContainer = document.getElementById('fbiPhotosContainer');
+        const videoContainer = document.getElementById('fbiVideosContainer');
+        const fbiIcon = document.getElementById('fbiSectionIcon');
+        const addBtn = document.getElementById('addFbiBtn');
+
+        if (isPhotos) {
+            if (photoContainer) photoContainer.style.display = 'block';
+            if (videoContainer) videoContainer.style.display = 'none';
+
+            if (fbiIcon) {
+                fbiIcon.className = 'section-icon photos-icon';
+                const img = fbiIcon.querySelector('img');
+                if (img) img.src = 'icons/photo.png';
+            }
+
+            if (addBtn) addBtn.onclick = () => openModal('fbi_photo');
+            currentType = 'fbi_photo';
+        } else {
+            if (photoContainer) photoContainer.style.display = 'none';
+            if (videoContainer) videoContainer.style.display = 'block';
+
+            if (fbiIcon) {
+                fbiIcon.className = 'section-icon videos-icon';
+                const img = fbiIcon.querySelector('img');
+                if (img) img.src = 'icons/video.png';
+            }
+
+            if (addBtn) addBtn.onclick = () => openModal('fbi_video');
+            currentType = 'fbi_video';
+        }
     }
-    originalDeleteEvidence(type, id);
-};
+
+    // Render FBI Evidence
+    function renderFBIEvidence() {
+        renderFBIPhotos();
+        renderFBIVideos();
+    }
+
+    function renderFBIPhotos() {
+        const grid = document.getElementById('fbiPhotosGrid');
+        if (!grid) return;
+
+        if (!evidenceData.fbi_photos || evidenceData.fbi_photos.length === 0) {
+            grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><img src="icons/photo.png" alt="" class="icon-large"></div>
+                <h3>No FBI Photos Added Yet</h3>
+                <p>Click "Add FBI Evidence" to upload photographic evidence</p>
+            </div>
+        `;
+            return;
+        }
+
+        grid.innerHTML = evidenceData.fbi_photos.map(photo => `
+        <div class="evidence-card" onclick="viewEvidence('fbi_photo', ${photo.id})">
+            <img class="evidence-card-image" src="${photo.url || 'https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'}" alt="${photo.title}" onerror="this.src='https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'">
+            <div class="evidence-card-content">
+                <h3 class="evidence-card-title">${photo.title}</h3>
+                <p class="evidence-card-description">${photo.description || 'No description provided'}</p>
+                <div class="evidence-card-meta">
+                    <span class="evidence-card-date"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> ${formatDate(photo.date)}</span>
+                    <div class="evidence-card-actions">
+                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvidence('fbi_photos', ${photo.id})" title="Delete"><img src="icons/delete.png" alt="Delete" style="width: 14px; height: 14px;"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    function renderFBIVideos() {
+        const grid = document.getElementById('fbiVideosGrid');
+        if (!grid) return;
+
+        if (!evidenceData.fbi_videos || evidenceData.fbi_videos.length === 0) {
+            grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><img src="icons/video.png" alt="" class="icon-large"></div>
+                <h3>No FBI Videos Added Yet</h3>
+                <p>Click "Add FBI Evidence" to upload video evidence</p>
+            </div>
+        `;
+            return;
+        }
+
+        grid.innerHTML = evidenceData.fbi_videos.map(video => `
+        <div class="evidence-card" onclick="viewEvidence('fbi_video', ${video.id})">
+            <div class="video-thumbnail">
+                <video class="evidence-card-image" src="${video.url}" muted preload="metadata" onloadeddata="this.currentTime=1"></video>
+                <div class="play-overlay"><img src="icons/play.png" alt="Play" style="width: 48px; height: 48px;"></div>
+            </div>
+            <div class="evidence-card-content">
+                <h3 class="evidence-card-title">${video.title}</h3>
+                <p class="evidence-card-description">${video.description || 'No description provided'}</p>
+                <div class="evidence-card-meta">
+                    <span class="evidence-card-date"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> ${formatDate(video.date)}</span>
+                    <div class="evidence-card-actions">
+                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvidence('fbi_videos', ${video.id})" title="Delete"><img src="icons/delete.png" alt="Delete" style="width: 14px; height: 14px;"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    // Logout function
+    function logout() {
+        currentUser = null;
+        saveSession();
+        updateUIForAuth();
+        renderAll(); // Re-render to hide edit buttons
+    }
+
+    // Update UI based on authentication state
+    function updateUIForAuth() {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+
+        if (currentUser) {
+            loginBtn.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userName.textContent = currentUser.displayName;
+        } else {
+            loginBtn.style.display = 'flex';
+            userInfo.style.display = 'none';
+        }
+
+        // Update add buttons visibility
+        updateEditButtonsVisibility();
+    }
+
+    // Update edit buttons visibility based on permissions
+    function updateEditButtonsVisibility() {
+        const canEdit = currentUser && currentUser.canEdit;
+        const addButtons = document.querySelectorAll('.add-btn');
+
+        addButtons.forEach(btn => {
+            if (canEdit) {
+                btn.style.display = 'flex';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
+    }
+
+    // Check if user can edit (used before any edit action)
+    function canUserEdit() {
+        return currentUser && currentUser.canEdit;
+    }
+
+    // Wrapper for openModal that checks permissions
+    const originalOpenModal = openModal;
+    openModal = function (type) {
+        if (!canUserEdit()) {
+            alert('You must be logged in with edit permissions to add evidence.');
+            return;
+        }
+        originalOpenModal(type);
+    };
+
+    // Wrapper for deleteEvidence that checks permissions
+    const originalDeleteEvidence = deleteEvidence;
+    deleteEvidence = function (type, id) {
+        if (!canUserEdit()) {
+            alert('You must be logged in with edit permissions to delete evidence.');
+            return;
+        }
+        originalDeleteEvidence(type, id);
+    };
