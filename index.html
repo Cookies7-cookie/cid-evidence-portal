@@ -22,9 +22,8 @@
                 </div>
             </div>
             <nav class="nav">
-                <a href="#photos" class="nav-link active" data-section="photos">Photos</a>
-                <a href="#videos" class="nav-link" data-section="videos">Videos</a>
-                <a href="#fbi-evidences" class="nav-link" data-section="fbi-evidences">FBI Evidences</a>
+                <a href="#photos" class="nav-link active" data-tab="photos">Photos</a>
+                <a href="#videos" class="nav-link" data-tab="videos">Videos</a>
             </nav>
             <div class="auth-section">
                 <button class="login-btn" id="loginBtn" onclick="openLoginModal()">
@@ -51,19 +50,19 @@
                 <div class="stat-item"><span class="stat-number" id="videoCount">0</span><span
                         class="stat-label">Videos</span></div>
                 <div class="stat-divider"></div>
-                <div class="stat-item"><span class="stat-number" id="fbiCount">0</span><span class="stat-label">FBI
+                <div class="stat-item"><span class="stat-number" id="cidCount">0</span><span class="stat-label">CID
                         Files</span></div>
             </div>
         </div>
     </section>
 
     <main class="main-content">
-        <section id="fbi-evidences" class="evidence-section active">
+        <section id="cid-evidences" class="evidence-section active">
             <div class="section-header">
-                <div class="section-icon photos-icon" id="mainSectionIcon"><img src="icons/photo.png" alt=""
+                <div class="section-icon photos-icon" id="cidSectionIcon"><img src="icons/photo.png" alt=""
                         class="icon"></div>
                 <div class="section-title-group">
-                    <h2 class="section-title">FBI Evidences</h2>
+                    <h2 class="section-title">CID Evidences</h2>
                     <p class="section-description">Secure documentation of all photographic and video evidences</p>
                 </div>
                 <button class="add-btn" id="addEvidenceBtn" onclick="openModal('photo')">+ Add Evidence</button>

@@ -19,8 +19,6 @@ let currentUser = null;
 let evidenceData = {
     photos: [],
     videos: [],
-    fbi_photos: [],
-    fbi_videos: [],
     text: []
 };
 
@@ -79,21 +77,19 @@ function setupNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const section = link.dataset.section;
+            const tab = link.dataset.tab;
 
             // Update nav active state
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            // Show corresponding section
-            const sections = document.querySelectorAll('.evidence-section');
-            sections.forEach(s => s.classList.remove('active'));
+            // Switch tab content
+            switchTab(tab);
 
-            const targetSection = document.getElementById(section);
-            if (targetSection) {
-                targetSection.classList.add('active');
-                // Scroll to section
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll to section
+            const section = document.getElementById('cid-evidences');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         });
     });
@@ -103,7 +99,7 @@ function setupNavigation() {
 function updateStats() {
     document.getElementById('photoCount').textContent = evidenceData.photos.length;
     document.getElementById('videoCount').textContent = evidenceData.videos.length;
-    document.getElementById('fbiCount').textContent = evidenceData.fbi_photos.length + evidenceData.fbi_videos.length;
+    document.getElementById('cidCount').textContent = evidenceData.photos.length + evidenceData.videos.length;
 
     // Animate numbers
     animateNumbers();
@@ -137,7 +133,6 @@ function setDefaultDate() {
 function openModal(type) {
     currentType = type;
     const modal = document.getElementById('modalOverlay');
-    const criminalFields = document.getElementById('criminalFields');
     const urlGroup = document.getElementById('urlGroup');
     const thumbnailGroup = document.getElementById('thumbnailGroup');
     const modalTitle = document.getElementById('modalTitle');
@@ -150,21 +145,18 @@ function openModal(type) {
     switch (type) {
         case 'photo':
             modalTitle.textContent = 'Add Photo Evidence';
-            criminalFields.style.display = 'none';
             urlGroup.style.display = 'block';
             thumbnailGroup.style.display = 'none';
             document.querySelector('#urlGroup label').textContent = 'Image URL';
             break;
         case 'video':
             modalTitle.textContent = 'Add Video Evidence';
-            criminalFields.style.display = 'none';
             urlGroup.style.display = 'block';
             thumbnailGroup.style.display = 'block';
             document.querySelector('#urlGroup label').textContent = 'Video URL';
             break;
         case 'text':
             modalTitle.textContent = 'Add Text Evidence';
-            criminalFields.style.display = 'none';
             urlGroup.style.display = 'none';
             thumbnailGroup.style.display = 'none';
             break;
@@ -220,40 +212,10 @@ function handleSubmit(e) {
                 renderAll();
                 closeModal();
             }
+            break;
         case 'text':
             evidenceData.text.push({ id, title, content: description, date });
             break;
-        case 'fbi_photo':
-            evidenceData.fbi_photos.push({ id, title, description, url, date });
-            saveData();
-            renderAll();
-            closeModal();
-            break;
-        case 'fbi_video':
-            const fbiThumbnail = form.thumbnail?.value || '';
-            if (fbiThumbnail) {
-                evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: fbiThumbnail, date });
-                saveData();
-                renderAll();
-                closeModal();
-            } else if (url) {
-                generateVideoThumbnail(url, (autoThumbnail) => {
-                    evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: autoThumbnail, date });
-                    saveData();
-                    renderAll();
-                    closeModal();
-                });
-            } else {
-                evidenceData.fbi_videos.push({ id, title, description, url, thumbnail: '', date });
-                saveData();
-                renderAll();
-                closeModal();
-            }
-            return;
-
-            saveData();
-            renderAll();
-            closeModal();
     }
 
     // Generate thumbnail from video's first frame
@@ -296,7 +258,6 @@ function handleSubmit(e) {
     function renderAll() {
         renderPhotos();
         renderVideos();
-        renderFBIEvidence();
     }
 
     // Render photos
@@ -568,32 +529,7 @@ function handleSubmit(e) {
     }
 
     function switchTab(type) {
-        // If it's one of the FBI subtypes, delegate to FBI switcher
-        if (type === 'fbi_photos' || type === 'fbi_videos') {
-            switchFbiTab(type);
-            return;
-        }
-
-        // Standard main nav logic is handled by setupNavigation and data-section attributes
-        // But if we have internal tabs for the main sections (which we don't currently, they are separate sections)
-        // We might need logic here. 
-
-        // However, the FBI section internal tabs might call switchTab('photos') due to copy-paste or old code.
-        // Let's handle that case if we are in the FBI section
-        const fbiSection = document.getElementById('fbi-evidences');
-        if (fbiSection && fbiSection.classList.contains('active')) {
-            if (type === 'photos') switchFbiTab('fbi_photos');
-            if (type === 'videos') switchFbiTab('fbi_videos');
-        }
-    }
-
-    function switchFbiTab(type) {
-        // Normalize type
-        let targetType = type;
-        if (type === 'photos') targetType = 'fbi_photos';
-        if (type === 'videos') targetType = 'fbi_videos';
-
-        const isPhotos = targetType === 'fbi_photos';
+        const isPhotos = (type === 'photos');
 
         // Update tab buttons
         const buttons = document.querySelectorAll('.evidence-tabs .tab-btn');
@@ -608,109 +544,47 @@ function handleSubmit(e) {
             }
         });
 
-        const photoContainer = document.getElementById('fbiPhotosContainer');
-        const videoContainer = document.getElementById('fbiVideosContainer');
-        const fbiIcon = document.getElementById('fbiSectionIcon');
-        const addBtn = document.getElementById('addFbiBtn');
+        // Update nav links
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            if (link.dataset.tab === type) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Toggle containers
+        const photoContainer = document.getElementById('photosContainer');
+        const videoContainer = document.getElementById('videosContainer');
+        const sectionIcon = document.getElementById('cidSectionIcon');
+        const addBtn = document.getElementById('addEvidenceBtn');
 
         if (isPhotos) {
             if (photoContainer) photoContainer.style.display = 'block';
             if (videoContainer) videoContainer.style.display = 'none';
 
-            if (fbiIcon) {
-                fbiIcon.className = 'section-icon photos-icon';
-                const img = fbiIcon.querySelector('img');
+            if (sectionIcon) {
+                sectionIcon.className = 'section-icon photos-icon';
+                const img = sectionIcon.querySelector('img');
                 if (img) img.src = 'icons/photo.png';
             }
 
-            if (addBtn) addBtn.onclick = () => openModal('fbi_photo');
-            currentType = 'fbi_photo';
+            if (addBtn) addBtn.onclick = () => openModal('photo');
+            currentType = 'photo';
         } else {
             if (photoContainer) photoContainer.style.display = 'none';
             if (videoContainer) videoContainer.style.display = 'block';
 
-            if (fbiIcon) {
-                fbiIcon.className = 'section-icon videos-icon';
-                const img = fbiIcon.querySelector('img');
+            if (sectionIcon) {
+                sectionIcon.className = 'section-icon videos-icon';
+                const img = sectionIcon.querySelector('img');
                 if (img) img.src = 'icons/video.png';
             }
 
-            if (addBtn) addBtn.onclick = () => openModal('fbi_video');
-            currentType = 'fbi_video';
+            if (addBtn) addBtn.onclick = () => openModal('video');
+            currentType = 'video';
         }
-    }
-
-    // Render FBI Evidence
-    function renderFBIEvidence() {
-        renderFBIPhotos();
-        renderFBIVideos();
-    }
-
-    function renderFBIPhotos() {
-        const grid = document.getElementById('fbiPhotosGrid');
-        if (!grid) return;
-
-        if (!evidenceData.fbi_photos || evidenceData.fbi_photos.length === 0) {
-            grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon"><img src="icons/photo.png" alt="" class="icon-large"></div>
-                <h3>No FBI Photos Added Yet</h3>
-                <p>Click "Add FBI Evidence" to upload photographic evidence</p>
-            </div>
-        `;
-            return;
-        }
-
-        grid.innerHTML = evidenceData.fbi_photos.map(photo => `
-        <div class="evidence-card" onclick="viewEvidence('fbi_photo', ${photo.id})">
-            <img class="evidence-card-image" src="${photo.url || 'https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'}" alt="${photo.title}" onerror="this.src='https://via.placeholder.com/400x200/1a1a24/3f3f46?text=No+Image'">
-            <div class="evidence-card-content">
-                <h3 class="evidence-card-title">${photo.title}</h3>
-                <p class="evidence-card-description">${photo.description || 'No description provided'}</p>
-                <div class="evidence-card-meta">
-                    <span class="evidence-card-date"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> ${formatDate(photo.date)}</span>
-                    <div class="evidence-card-actions">
-                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvidence('fbi_photos', ${photo.id})" title="Delete"><img src="icons/delete.png" alt="Delete" style="width: 14px; height: 14px;"></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
-    }
-
-    function renderFBIVideos() {
-        const grid = document.getElementById('fbiVideosGrid');
-        if (!grid) return;
-
-        if (!evidenceData.fbi_videos || evidenceData.fbi_videos.length === 0) {
-            grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon"><img src="icons/video.png" alt="" class="icon-large"></div>
-                <h3>No FBI Videos Added Yet</h3>
-                <p>Click "Add FBI Evidence" to upload video evidence</p>
-            </div>
-        `;
-            return;
-        }
-
-        grid.innerHTML = evidenceData.fbi_videos.map(video => `
-        <div class="evidence-card" onclick="viewEvidence('fbi_video', ${video.id})">
-            <div class="video-thumbnail">
-                <video class="evidence-card-image" src="${video.url}" muted preload="metadata" onloadeddata="this.currentTime=1"></video>
-                <div class="play-overlay"><img src="icons/play.png" alt="Play" style="width: 48px; height: 48px;"></div>
-            </div>
-            <div class="evidence-card-content">
-                <h3 class="evidence-card-title">${video.title}</h3>
-                <p class="evidence-card-description">${video.description || 'No description provided'}</p>
-                <div class="evidence-card-meta">
-                    <span class="evidence-card-date"><img src="icons/calendar.png" alt="" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"> ${formatDate(video.date)}</span>
-                    <div class="evidence-card-actions">
-                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvidence('fbi_videos', ${video.id})" title="Delete"><img src="icons/delete.png" alt="Delete" style="width: 14px; height: 14px;"></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
     }
 
     // Logout function
